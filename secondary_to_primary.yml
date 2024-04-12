@@ -1,16 +1,17 @@
 ---
 
 # FIRST HOST
-- hosts: solana_validator_server2
+- hosts: node01b-mainnet
   vars:
     # CHANGE THESE VARIABLES ACCORDING TO YOUR SETUP
-    solana_cli_path: /path/to/solana/bin
-    solana_keys_path: /path/to/solana/keys
-    ledger_path: /path/to/ledger
+    solana_cli_path: /root/.local/share/solana/install/active_release/bin
+    solana_keys_path: /root/solana
+    ledger_path: /root/solana/ledger
+    tower_path: /root/solana/ledger
 
   tasks:
   - name: Get tower filename
-    shell: find {{ledger_path}} -name tower-*.bin
+    shell: find {{tower_path}} -name tower-*.bin
     register: tower_stdout
 
   - name: Save tower filename
@@ -37,19 +38,20 @@
 
 
 # SECOND HOST
-- hosts: solana_validator_server1
+- hosts: node01-mainnet
   vars:
     # CHANGE THESE VARIABLES ACCORDING TO YOUR SETUP
-    solana_cli_path: /path/to/solana/bin
-    solana_keys_path: /path/to/solana/keys
-    ledger_path: /path/to/ledger
+    solana_cli_path: /root/.local/share/solana/install/active_release/bin
+    solana_keys_path: /root/solana
+    ledger_path: /mnt/ledger
+    tower_path: /mnt/ramdisk/tower
 
     # CHANGE `solana-host-secondary` BELOW (MATCH THE CONTENT OF THE host FILE)
-    tower_filename: "{{hostvars['solana-host-secondary']['tower_filename']}}"
+    tower_filename: "{{hostvars['node01b-mainnet']['tower_filename']}}"
 
   tasks:
   - name: Copy the tower to Primary Node
-    copy: src=/tmp/{{tower_filename}} dest={{ledger_path}}
+    copy: src=/tmp/{{tower_filename}} dest={{tower_path}}
 
   - name: Set Primary Node ID to staked-identity
     shell: |
@@ -67,7 +69,7 @@
   connection: local
   vars:
     # CHANGE `solana-host-secondary` BELOW (MATCH THE CONTENT OF THE host FILE)
-    tower_filename: "{{hostvars['solana-host-secondary']['tower_filename']}}"
+    tower_filename: "{{hostvars['node01b-mainnet']['tower_filename']}}"
   tasks:
     - name: /tmp/<tower> Cleanup
       file: path=/tmp/{{tower_filename}} state=absent
